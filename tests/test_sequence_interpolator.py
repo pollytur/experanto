@@ -14,14 +14,15 @@ DEFAULT_SEQUENCE_LENGTH = 10
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
-def test_nearest_neighbor_interpolation(n_signals, sampling_rate, use_mem_mapped):
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+def test_nearest_neighbor_interpolation(n_signals, sampling_rate, use_mem_mapped, start_time):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=use_mem_mapped,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
-            start_time=0,
+            start_time=start_time,
         )
     ) as (timestamps, data, _, seq_interp):
         assert isinstance(
@@ -50,15 +51,16 @@ def test_nearest_neighbor_interpolation(n_signals, sampling_rate, use_mem_mapped
 
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("keep_nans", [False, True])
-def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans):
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans, start_time):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=True,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=10.0,
             contain_nans=True,
-            start_time=0,
+            start_time=start_time,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -85,14 +87,15 @@ def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans):
 
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
-def test_nearest_neighbor_interpolation_with_inbetween_times(n_signals, sampling_rate):
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+def test_nearest_neighbor_interpolation_with_inbetween_times(n_signals, sampling_rate, start_time):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=True,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
-            start_time=0,
+            start_time=start_time,
         )
     ) as (timestamps, data, _, seq_interp):
         assert isinstance(
@@ -121,17 +124,18 @@ def test_nearest_neighbor_interpolation_with_inbetween_times(n_signals, sampling
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_nearest_neighbor_interpolation_with_phase_shifts(
-    n_signals, sampling_rate, use_mem_mapped
+    n_signals, sampling_rate, use_mem_mapped, start_time
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=use_mem_mapped,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
             shifts_per_signal=True,
-            start_time=0,
+            start_time=start_time,
         )
     ) as (timestamps, data, shift, seq_interp):
         assert isinstance(
@@ -180,18 +184,19 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
 
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("keep_nans", [False, True])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
-    n_signals, keep_nans
+    n_signals, keep_nans, start_time
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=True,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=10.0,
             shifts_per_signal=True,
             contain_nans=True,
-            start_time=0,
+            start_time=start_time,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -221,17 +226,18 @@ def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("contain_nans", [False, True])
 @pytest.mark.parametrize("keep_nans", [False, True])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_linear_interpolation(
-    n_signals, sampling_rate, use_mem_mapped, contain_nans, keep_nans
+    n_signals, sampling_rate, use_mem_mapped, contain_nans, keep_nans, start_time
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=use_mem_mapped,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
             contain_nans=contain_nans,
-            start_time=0,
+            start_time=start_time,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -275,17 +281,18 @@ def test_linear_interpolation(
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("keep_nans", [False, True])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_linear_interpolation_with_phase_shifts(
-    n_signals, sampling_rate, use_mem_mapped, keep_nans
+    n_signals, sampling_rate, use_mem_mapped, keep_nans, start_time
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=use_mem_mapped,
-            t_end=5.0,
+            t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
             shifts_per_signal=True,
-            start_time=0,
+            start_time=start_time,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, shift, seq_interp):
