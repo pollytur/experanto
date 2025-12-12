@@ -15,7 +15,6 @@ DEFAULT_SEQUENCE_LENGTH = 10
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
-@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 @pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_nearest_neighbor_interpolation(
     n_signals,
