@@ -160,7 +160,9 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
             for dt in np.linspace(0, 0.99) * delta_t:
                 shifted_times = times + shift[i] + dt
 
-                interp, valid = seq_interp.interpolate(times=shifted_times, return_valid=True)
+                interp, valid = seq_interp.interpolate(
+                    times=shifted_times, return_valid=True
+                )
                 assert (
                     interp[:, i] == data[1 : DEFAULT_SEQUENCE_LENGTH + 1, i]
                 ).all(), f"Data at {dt} does not match original data (use_mem_mapped={use_mem_mapped}, sampling_rate={sampling_rate}, shifts_per_signal={True})"
@@ -168,7 +170,9 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
             for dt in np.linspace(1.0, 1.99) * delta_t:
                 shifted_times = times + shift[i] + dt
 
-                interp, valid = seq_interp.interpolate(times=shifted_times, return_valid=True)
+                interp, valid = seq_interp.interpolate(
+                    times=shifted_times, return_valid=True
+                )
                 assert (
                     interp[:, i] == data[2 : DEFAULT_SEQUENCE_LENGTH + 2, i]
                 ).all(), f"Data at {dt} does not match original data (use_mem_mapped={use_mem_mapped}, sampling_rate={sampling_rate}, shifts_per_signal={True})"
@@ -318,7 +322,9 @@ def test_linear_interpolation_with_phase_shifts(
                     expected, np.nanmean(expected, axis=0), where=np.isnan(expected)
                 )
 
-            interp, valid = seq_interp.interpolate(times=shifted_times, return_valid=True)
+            interp, valid = seq_interp.interpolate(
+                times=shifted_times, return_valid=True
+            )
 
             valid_indices = np.where(valid)[0]
             if len(valid_indices) > 0:
@@ -435,7 +441,9 @@ def test_interpolation_for_empty_times(interpolation_mode, phase_shifts):
             UserWarning,
             match="Sequence interpolation returns empty array, no valid times queried",
         ):
-            interp, valid = seq_interp.interpolate(times=np.array([]), return_valid=True)
+            interp, valid = seq_interp.interpolate(
+                times=np.array([]), return_valid=True
+            )
         assert interp.shape[0] == 0, "No data expected"
         assert valid.shape[0] == 0, "No data expected"
 
@@ -446,7 +454,7 @@ def test_interpolation_mode_not_implemented():
     ) as (_, _, _, seq_interp):
         seq_interp.interpolation_mode = "unsupported_mode"
         with pytest.raises(NotImplementedError):
-            seq_interp.interpolate(np.array([0.0, 1.0, 2.0]))
+            seq_interp.interpolate(np.array([0.0, 1.0, 2.0]), return_valid=True)
 
 
 # =============================================================================
