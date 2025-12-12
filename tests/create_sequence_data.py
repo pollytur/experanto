@@ -56,7 +56,7 @@ def create_sequence_data(
         # Generate start_time if not provided (random non-negative value)
         if start_time is None:
             start_time = np.random.rand() * 10.0  # Random start between 0 and 10
-        
+
         # end_time is start_time + t_end
         end_time = start_time + t_end
 
@@ -70,7 +70,9 @@ def create_sequence_data(
             "n_signals": n_signals,
         }
 
-        n_samples = int((meta["end_time"] - meta["start_time"]) * meta["sampling_rate"]) + 1
+        n_samples = (
+            int((meta["end_time"] - meta["start_time"]) * meta["sampling_rate"]) + 1
+        )
 
         if irregular_timestamps:
             # Generate irregular timestamps with random jitter

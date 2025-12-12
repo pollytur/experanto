@@ -449,9 +449,12 @@ def test_interpolation_for_empty_times(interpolation_mode, phase_shifts):
 
 
 def test_interpolation_mode_not_implemented():
-    with sequence_data_and_interpolator(
-        data_kwargs=dict(start_time=0)
-    ) as (_, _, _, seq_interp):
+    with sequence_data_and_interpolator(data_kwargs=dict(start_time=0)) as (
+        _,
+        _,
+        _,
+        seq_interp,
+    ):
         seq_interp.interpolation_mode = "unsupported_mode"
         with pytest.raises(NotImplementedError):
             seq_interp.interpolate(np.array([0.0, 1.0, 2.0]), return_valid=True)
@@ -465,7 +468,9 @@ def test_interpolation_mode_not_implemented():
 @pytest.mark.parametrize("n_signals", [1, 10])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
-def test_interpolation_with_nonzero_start_time(n_signals, sampling_rate, interpolation_mode):
+def test_interpolation_with_nonzero_start_time(
+    n_signals, sampling_rate, interpolation_mode
+):
     """Test interpolation when start_time is non-zero to check for numerics issues."""
     # Use various non-zero start times to catch potential floating point issues
     for start_time in [0.1, 1.5, 10.0, 100.0, 1000.5]:
@@ -494,18 +499,20 @@ def test_interpolation_with_nonzero_start_time(n_signals, sampling_rate, interpo
             )
 
             # Verify that the interpolator correctly handles the offset
-            assert seq_interp.start_time == start_time, (
-                f"start_time mismatch: expected {start_time}, got {seq_interp.start_time}"
-            )
-            assert seq_interp.end_time == start_time + 5.0, (
-                f"end_time mismatch: expected {start_time + 5.0}, got {seq_interp.end_time}"
-            )
+            assert (
+                seq_interp.start_time == start_time
+            ), f"start_time mismatch: expected {start_time}, got {seq_interp.start_time}"
+            assert (
+                seq_interp.end_time == start_time + 5.0
+            ), f"end_time mismatch: expected {start_time + 5.0}, got {seq_interp.end_time}"
 
 
 @pytest.mark.parametrize("n_signals", [1, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
-def test_interpolation_with_irregular_timestamps(n_signals, sampling_rate, interpolation_mode):
+def test_interpolation_with_irregular_timestamps(
+    n_signals, sampling_rate, interpolation_mode
+):
     """Test interpolation with irregular (jittered) timestamps."""
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -522,9 +529,9 @@ def test_interpolation_with_irregular_timestamps(n_signals, sampling_rate, inter
         # Verify timestamps are irregular (not perfectly evenly spaced)
         diffs = np.diff(timestamps)
         # With jitter, differences should not all be the same
-        assert not np.allclose(diffs, diffs[0], rtol=0.01), (
-            "Timestamps should have irregular spacing"
-        )
+        assert not np.allclose(
+            diffs, diffs[0], rtol=0.01
+        ), "Timestamps should have irregular spacing"
 
         # Query times within the valid range
         times = timestamps[:DEFAULT_SEQUENCE_LENGTH] + 1e-9
@@ -539,7 +546,7 @@ def test_interpolation_with_irregular_timestamps(n_signals, sampling_rate, inter
 def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
     """
     Test with phase shifts larger than 1/sampling_rate (the target sampling interval).
-    
+
     This tests the case where phase shifts can span multiple sampling intervals,
     which is important for ensuring the interpolator handles large phase shifts correctly.
     """
@@ -561,9 +568,9 @@ def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
         delta_t = 1.0 / sampling_rate
 
         # Verify that at least some shifts are larger than the sampling interval
-        assert np.any(shifts > delta_t), (
-            f"Expected some phase shifts > {delta_t}, but max shift was {np.max(shifts)}"
-        )
+        assert np.any(
+            shifts > delta_t
+        ), f"Expected some phase shifts > {delta_t}, but max shift was {np.max(shifts)}"
 
         # Query times within valid range
         # Start from a time that accounts for the max phase shift
@@ -574,7 +581,9 @@ def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
         interp, valid = seq_interp.interpolate(times=times, return_valid=True)
 
         # Should still get valid interpolation results
-        assert len(valid) > 0, "Should have valid interpolation results with large phase shifts"
+        assert (
+            len(valid) > 0
+        ), "Should have valid interpolation results with large phase shifts"
         assert interp.shape[1] == n_signals, f"Expected {n_signals} signals"
 
 
@@ -583,7 +592,7 @@ def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
 def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
     """
     Test that phase shifts cause different signals to return different index ranges.
-    
+
     The point of phase shifts is that they change the indexes of the data returned.
     For example, neuron 1 might return indexes 0 to 10, while neuron 2 returns
     indexes 1 to 11 because neuron 1 has a bigger timeshift than neuron 2.
@@ -635,7 +644,7 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
 def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate):
     """
     Test that linear interpolation matches numpy's np.interp function.
-    
+
     This tests the assumptions about how linear interpolation is performed,
     using np.interp as the reference implementation.
     """
@@ -661,11 +670,7 @@ def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate):
         # Compute expected values using np.interp for each signal
         expected = np.zeros((len(query_times), n_signals))
         for sig_idx in range(n_signals):
-            expected[:, sig_idx] = np.interp(
-                query_times,
-                timestamps,
-                data[:, sig_idx]
-            )
+            expected[:, sig_idx] = np.interp(query_times, timestamps, data[:, sig_idx])
 
         # Compare results
         assert np.allclose(interp, expected, rtol=1e-6, atol=1e-9), (
@@ -676,10 +681,12 @@ def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate):
 
 @pytest.mark.parametrize("n_signals", [5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
-def test_linear_interpolation_with_phase_shifts_matches_np_interp(n_signals, sampling_rate):
+def test_linear_interpolation_with_phase_shifts_matches_np_interp(
+    n_signals, sampling_rate
+):
     """
     Test that linear interpolation with phase shifts matches numpy's np.interp.
-    
+
     Each signal should be interpolated as if it had its own shifted time axis.
     """
     with sequence_data_and_interpolator(
@@ -703,7 +710,10 @@ def test_linear_interpolation_with_phase_shifts_matches_np_interp(n_signals, sam
         # Query at times that are valid for all phase shifts
         max_shift = np.max(shifts)
         start_idx = int(np.ceil(max_shift * sampling_rate)) + 2
-        query_times = timestamps[start_idx : start_idx + DEFAULT_SEQUENCE_LENGTH - 2] + 0.3 * delta_t
+        query_times = (
+            timestamps[start_idx : start_idx + DEFAULT_SEQUENCE_LENGTH - 2]
+            + 0.3 * delta_t
+        )
 
         interp, valid = seq_interp.interpolate(times=query_times, return_valid=True)
 
@@ -718,9 +728,7 @@ def test_linear_interpolation_with_phase_shifts_matches_np_interp(n_signals, sam
             # Each signal has its own shifted time axis
             shifted_timestamps = timestamps + shifts[sig_idx]
             expected[:, sig_idx] = np.interp(
-                valid_query_times,
-                shifted_timestamps,
-                data[:, sig_idx]
+                valid_query_times, shifted_timestamps, data[:, sig_idx]
             )
 
         # Compare results
@@ -734,7 +742,7 @@ def test_linear_interpolation_with_phase_shifts_matches_np_interp(n_signals, sam
 def test_multiple_phase_shift_generations(n_signals):
     """
     Test with multiple generations of phase shifts to verify index behavior.
-    
+
     The point is that phase shifts change the indexes of returned data,
     so for neuron 1 we might return indexes 0 to 10 while for neuron 2
     we return indexes 1 to 11 because neuron 1 has a bigger timeshift.
@@ -773,9 +781,10 @@ def test_multiple_phase_shift_generations(n_signals):
                 # The interpolated data should reflect the phase-shifted indexing
                 # Different signals will have retrieved data from different
                 # effective time points
-                assert interp.shape == (1, n_signals), (
-                    f"Expected shape (1, {n_signals}), got {interp.shape}"
-                )
+                assert interp.shape == (
+                    1,
+                    n_signals,
+                ), f"Expected shape (1, {n_signals}), got {interp.shape}"
 
 
 if __name__ == "__main__":
