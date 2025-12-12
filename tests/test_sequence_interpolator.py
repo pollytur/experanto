@@ -660,6 +660,7 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
 @pytest.mark.parametrize("use_phase_shifts", [False, True])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_linear_interpolation_matches_np_interp(
     n_signals, sampling_rate, use_phase_shifts
 ):
@@ -680,10 +681,10 @@ def test_linear_interpolation_matches_np_interp(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=True,
-            t_end=5.0,
+            t_end=5.0 + start_time,
             sampling_rate=sampling_rate,
             shifts_per_signal=use_phase_shifts,
-            start_time=0,
+            start_time=start_time,
         ),
         interp_kwargs=dict(keep_nans=True),
     ) as (timestamps, data, shifts, seq_interp):
