@@ -662,7 +662,7 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
 @pytest.mark.parametrize("use_phase_shifts", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 def test_linear_interpolation_matches_np_interp(
-    n_signals, sampling_rate, use_phase_shifts
+    n_signals, sampling_rate, use_phase_shifts, start_time
 ):
     """
     Test that linear interpolation matches numpy's np.interp function.
