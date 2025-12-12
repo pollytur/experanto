@@ -15,7 +15,9 @@ DEFAULT_SEQUENCE_LENGTH = 10
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
-def test_nearest_neighbor_interpolation(n_signals, sampling_rate, use_mem_mapped, start_time):
+def test_nearest_neighbor_interpolation(
+    n_signals, sampling_rate, use_mem_mapped, start_time
+):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
@@ -88,7 +90,9 @@ def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans, start
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
-def test_nearest_neighbor_interpolation_with_inbetween_times(n_signals, sampling_rate, start_time):
+def test_nearest_neighbor_interpolation_with_inbetween_times(
+    n_signals, sampling_rate, start_time
+):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
