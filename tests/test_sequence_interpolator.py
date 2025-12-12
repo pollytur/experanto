@@ -157,7 +157,7 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
             sampling_rate=sampling_rate,
             shifts_per_signal=True,
             start_time=start_time,
-            irregular_timestamps=irregular_timestamps
+            irregular_timestamps=irregular_timestamps,
         )
     ) as (timestamps, data, shift, seq_interp):
         assert isinstance(
@@ -220,7 +220,7 @@ def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
             shifts_per_signal=True,
             contain_nans=True,
             start_time=start_time,
-            irregular_timestamps=irregular_timestamps
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -253,7 +253,13 @@ def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 @pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_linear_interpolation(
-    n_signals, sampling_rate, use_mem_mapped, contain_nans, keep_nans, start_time, irregular_timestamps
+    n_signals,
+    sampling_rate,
+    use_mem_mapped,
+    contain_nans,
+    keep_nans,
+    start_time,
+    irregular_timestamps,
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -263,7 +269,7 @@ def test_linear_interpolation(
             sampling_rate=sampling_rate,
             contain_nans=contain_nans,
             start_time=start_time,
-            irregular_timestamps=irregular_timestamps
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -310,7 +316,12 @@ def test_linear_interpolation(
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
 @pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_linear_interpolation_with_phase_shifts(
-    n_signals, sampling_rate, use_mem_mapped, keep_nans, start_time, irregular_timestamps,
+    n_signals,
+    sampling_rate,
+    use_mem_mapped,
+    keep_nans,
+    start_time,
+    irregular_timestamps,
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
