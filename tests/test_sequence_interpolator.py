@@ -659,99 +659,73 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
 
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
-def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate):
+@pytest.mark.parametrize("use_phase_shifts", [False, True])
+def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate, use_phase_shifts):
     """
     Test that linear interpolation matches numpy's np.interp function.
 
     This tests the assumptions about how linear interpolation is performed,
     using np.interp as the reference implementation.
+    
+    Tests both regular interpolation and phase-shifted interpolation where
+    each signal has its own shifted time axis.
     """
+    # Skip phase shift test for n_signals=1 (no need to test phase shifts with single signal)
+    if use_phase_shifts and n_signals == 1:
+        pytest.skip("Phase shifts not meaningful for single signal")
+    
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
             use_mem_mapped=True,
             t_end=5.0,
             sampling_rate=sampling_rate,
-            start_time=0,
-        ),
-        interp_kwargs=dict(keep_nans=True),
-    ) as (timestamps, data, _, seq_interp):
-        seq_interp.interpolation_mode = "linear"
-
-        delta_t = 1.0 / sampling_rate
-
-        # Query at times between the regular timestamps (not exactly on them)
-        query_times = timestamps[1:DEFAULT_SEQUENCE_LENGTH] + 0.3 * delta_t
-
-        interp, valid = seq_interp.interpolate(times=query_times, return_valid=True)
-
-        # Compute expected values using np.interp for each signal
-        expected = np.zeros((len(query_times), n_signals))
-        for sig_idx in range(n_signals):
-            expected[:, sig_idx] = np.interp(query_times, timestamps, data[:, sig_idx])
-
-        # Compare results
-        assert np.allclose(interp, expected, rtol=1e-6, atol=1e-9), (
-            f"Linear interpolation does not match np.interp. "
-            f"Max difference: {np.max(np.abs(interp - expected))}"
-        )
-
-
-@pytest.mark.parametrize("n_signals", [5, 10])
-@pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
-def test_linear_interpolation_with_phase_shifts_matches_np_interp(
-    n_signals, sampling_rate
-):
-    """
-    Test that linear interpolation with phase shifts matches numpy's np.interp.
-
-    Each signal should be interpolated as if it had its own shifted time axis.
-    """
-    with sequence_data_and_interpolator(
-        data_kwargs=dict(
-            n_signals=n_signals,
-            use_mem_mapped=True,
-            t_end=5.0,
-            sampling_rate=sampling_rate,
-            shifts_per_signal=True,
+            shifts_per_signal=use_phase_shifts,
             start_time=0,
         ),
         interp_kwargs=dict(keep_nans=True),
     ) as (timestamps, data, shifts, seq_interp):
-        assert isinstance(
-            seq_interp, PhaseShiftedSequenceInterpolator
-        ), "Should be PhaseShiftedSequenceInterpolator"
+        if use_phase_shifts:
+            assert isinstance(
+                seq_interp, PhaseShiftedSequenceInterpolator
+            ), "Should be PhaseShiftedSequenceInterpolator"
+        
         seq_interp.interpolation_mode = "linear"
-
         delta_t = 1.0 / sampling_rate
 
-        # Query at times that are valid for all phase shifts
-        max_shift = np.max(shifts)
-        start_idx = int(np.ceil(max_shift * sampling_rate)) + 2
-        query_times = (
-            timestamps[start_idx : start_idx + DEFAULT_SEQUENCE_LENGTH - 2]
-            + 0.3 * delta_t
-        )
+        # For phase shifts, query at times valid for all shifts
+        if use_phase_shifts:
+            max_shift = np.max(shifts)
+            start_idx = int(np.ceil(max_shift * sampling_rate)) + 2
+            query_times = (
+                timestamps[start_idx : start_idx + DEFAULT_SEQUENCE_LENGTH - 2]
+                + 0.3 * delta_t
+            )
+        else:
+            query_times = timestamps[1:DEFAULT_SEQUENCE_LENGTH] + 0.3 * delta_t
 
         interp, valid = seq_interp.interpolate(times=query_times, return_valid=True)
 
         if len(valid) == 0:
-            return  # Skip if no valid times
+            pytest.skip("No valid times for interpolation")
 
-        valid_query_times = query_times[valid]
+        valid_query_times = query_times[valid] if use_phase_shifts else query_times
 
-        # Compute expected values using np.interp for each signal with its phase shift
+        # Compute expected values using np.interp for each signal
         expected = np.zeros((len(valid_query_times), n_signals))
         for sig_idx in range(n_signals):
-            # Each signal has its own shifted time axis
-            shifted_timestamps = timestamps + shifts[sig_idx]
-            expected[:, sig_idx] = np.interp(
-                valid_query_times, shifted_timestamps, data[:, sig_idx]
-            )
+            if use_phase_shifts:
+                # Each signal has its own shifted time axis
+                shifted_timestamps = timestamps + shifts[sig_idx]
+                expected[:, sig_idx] = np.interp(
+                    valid_query_times, shifted_timestamps, data[:, sig_idx]
+                )
+            else:
+                expected[:, sig_idx] = np.interp(valid_query_times, timestamps, data[:, sig_idx])
 
         # Compare results
         assert np.allclose(interp, expected, rtol=1e-6, atol=1e-9), (
-            f"Linear interpolation with phase shifts does not match np.interp. "
+            f"Linear interpolation does not match np.interp. "
             f"Max difference: {np.max(np.abs(interp - expected))}"
         )
 
