@@ -82,6 +82,7 @@ def create_sequence_data(
             # Generate jitter for each interval (n_samples - 1 intervals)
             timestamps = np.zeros(n_samples)
             timestamps[0] = meta["start_time"]
+            # notice: this for loop does snot account for the phase shifts and that the phase shifts can get outside the meta["end_time"]
             for i in range(1, n_samples - 1):
                 jitter = np.random.uniform(-jitter_scale, jitter_scale)
                 timestamps[i] = timestamps[i - 1] + regular_spacing + jitter
