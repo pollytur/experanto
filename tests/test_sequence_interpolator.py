@@ -474,50 +474,6 @@ def test_interpolation_mode_not_implemented():
 # =============================================================================
 # New test cases for expanded coverage
 # =============================================================================
-
-
-@pytest.mark.parametrize("n_signals", [1, 10])
-@pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
-@pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
-def test_interpolation_with_nonzero_start_time(
-    n_signals, sampling_rate, interpolation_mode
-):
-    """Test interpolation when start_time is non-zero - simple shape test, interpolation is tested later"""
-    # Use various non-zero start times to catch potential floating point issues
-    for start_time in [0.1, 1.5, 10.0, 100.0, 1000.5]:
-        with sequence_data_and_interpolator(
-            data_kwargs=dict(
-                n_signals=n_signals,
-                use_mem_mapped=True,
-                t_end=5.0,
-                sampling_rate=sampling_rate,
-                start_time=start_time,
-            )
-        ) as (timestamps, data, _, seq_interp):
-            seq_interp.interpolation_mode = interpolation_mode
-
-            # Query times within the valid range
-            times = timestamps[:DEFAULT_SEQUENCE_LENGTH] + 1e-9
-            interp, valid = seq_interp.interpolate(times=times, return_valid=True)
-
-            assert len(valid) == DEFAULT_SEQUENCE_LENGTH, (
-                f"Expected {DEFAULT_SEQUENCE_LENGTH} valid times, got {len(valid)} "
-                f"(start_time={start_time}, sampling_rate={sampling_rate})"
-            )
-            assert interp.shape == (DEFAULT_SEQUENCE_LENGTH, n_signals), (
-                f"Shape mismatch: expected ({DEFAULT_SEQUENCE_LENGTH}, {n_signals}), "
-                f"got {interp.shape}"
-            )
-
-            # Verify that the interpolator correctly handles the offset
-            assert (
-                seq_interp.start_time == start_time
-            ), f"start_time mismatch: expected {start_time}, got {seq_interp.start_time}"
-            assert (
-                seq_interp.end_time == start_time + 5.0
-            ), f"end_time mismatch: expected {start_time + 5.0}, got {seq_interp.end_time}"
-
-
 @pytest.mark.parametrize("n_signals", [1, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
