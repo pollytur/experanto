@@ -562,9 +562,11 @@ def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
 
 @pytest.mark.parametrize("n_signals", [5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0])
-def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
+@pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
+def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate, interpolation_mode):
     """
-    Test that phase shifts cause different signals to return different index ranges.
+    Test that phase shifts cause different signals to return different index ranges,
+    AND verify the interpolation values are actually correct.
 
     The point of phase shifts is that they change the indexes of the data returned.
     For example, neuron 1 might return indexes 0 to 10, while neuron 2 returns
@@ -585,6 +587,7 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
             seq_interp, PhaseShiftedSequenceInterpolator
         ), "Should be PhaseShiftedSequenceInterpolator"
 
+        seq_interp.interpolation_mode = interpolation_mode
         delta_t = 1.0 / sampling_rate
 
         # Sort shifts to understand which signals have larger/smaller shifts
@@ -596,33 +599,52 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
         if np.abs(shifts[max_shift_signal] - shifts[min_shift_signal]) < 0.5 * delta_t:
             return
 
-        # Query at times where the phase shifts should cause different indexes
-        # to be retrieved for different signals
-        base_time = timestamps[3] + shifts[min_shift_signal] + 0.1 * delta_t
-        times = np.array([base_time])
+        # Query at multiple times to properly test interpolation
+        # Use times that are valid for all phase shifts
+        max_shift = np.max(shifts)
+        start_idx = int(np.ceil(max_shift * sampling_rate)) + 2
+        query_times = timestamps[start_idx : start_idx + 5] + 0.3 * delta_t
 
-        interp, valid = seq_interp.interpolate(times=times, return_valid=True)
+        interp, valid = seq_interp.interpolate(times=query_times, return_valid=True)
 
-        # The interpolated values should be different because they come from
-        # different source indexes due to the phase shifts
-        if len(valid) > 0 and n_signals > 1:
-            # Verify that signals with different phase shifts produce different values
-            # Compute expected values for each signal using its phase shift
-            for i in range(n_signals):
-                shifted_time = base_time - shifts[i]
-                # Find which index this corresponds to
-                expected_idx = int(np.floor((shifted_time - timestamps[0]) / delta_t))
-                if 0 <= expected_idx < len(data):
-                    # The interpolated value should be close to data at that index
-                    assert np.isfinite(
-                        interp[0, i]
-                    ), f"Signal {i} should have finite interpolated value"
+        if len(valid) == 0:
+            pytest.skip("No valid times for interpolation")
 
-            # Verify that the min and max shift signals have different values
-            # (since they should be retrieving from different time points)
-            if shifts[max_shift_signal] - shifts[min_shift_signal] >= delta_t:
-                # With a shift difference >= delta_t, values should likely differ
-                assert interp.shape[0] > 0, "Should have interpolated values"
+        valid_query_times = query_times[valid]
+
+        # Verify actual interpolation correctness using np.interp as reference
+        expected = np.zeros((len(valid_query_times), n_signals))
+        for sig_idx in range(n_signals):
+            # Each signal has its own shifted time axis
+            shifted_timestamps = timestamps + shifts[sig_idx]
+            if interpolation_mode == "linear":
+                expected[:, sig_idx] = np.interp(
+                    valid_query_times, shifted_timestamps, data[:, sig_idx]
+                )
+            else:
+                # nearest_neighbor: find closest timestamp and use that data
+                for t_idx, t in enumerate(valid_query_times):
+                    # Find the index in the shifted time axis
+                    idx = np.searchsorted(shifted_timestamps, t) - 1
+                    idx = max(0, min(idx, len(data) - 1))
+                    expected[t_idx, sig_idx] = data[idx, sig_idx]
+
+        # Compare results - interpolation should match expected
+        assert np.allclose(interp, expected, rtol=1e-6, atol=1e-9), (
+            f"Phase-shifted {interpolation_mode} interpolation does not match expected. "
+            f"Max difference: {np.max(np.abs(interp - expected))}"
+        )
+
+        # Additionally verify signals with different shifts get different values
+        # when shift difference is significant
+        if shifts[max_shift_signal] - shifts[min_shift_signal] >= delta_t:
+            # With a shift difference >= delta_t, values should differ for at least some times
+            different_count = np.sum(
+                ~np.isclose(interp[:, min_shift_signal], interp[:, max_shift_signal])
+            )
+            assert different_count > 0, (
+                "Signals with different phase shifts should have different values"
+            )
 
 
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
