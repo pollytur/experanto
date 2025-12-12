@@ -141,13 +141,13 @@ def test_nearest_neighbor_interpolation_with_inbetween_times(
         ).all(), "Nearest neighbor interpolation does not match expected data"
 
 
-# todo- think about phase shifts starting from here
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_nearest_neighbor_interpolation_with_phase_shifts(
-    n_signals, sampling_rate, use_mem_mapped, start_time
+    n_signals, sampling_rate, use_mem_mapped, start_time, irregular_timestamps
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -157,6 +157,7 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
             sampling_rate=sampling_rate,
             shifts_per_signal=True,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps
         )
     ) as (timestamps, data, shift, seq_interp):
         assert isinstance(
@@ -206,8 +207,9 @@ def test_nearest_neighbor_interpolation_with_phase_shifts(
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("keep_nans", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
-    n_signals, keep_nans, start_time
+    n_signals, keep_nans, start_time, irregular_timestamps
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -218,6 +220,7 @@ def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
             shifts_per_signal=True,
             contain_nans=True,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -248,8 +251,9 @@ def test_nearest_neighbor_interpolation_with_phase_shifts_handles_nans(
 @pytest.mark.parametrize("contain_nans", [False, True])
 @pytest.mark.parametrize("keep_nans", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_linear_interpolation(
-    n_signals, sampling_rate, use_mem_mapped, contain_nans, keep_nans, start_time
+    n_signals, sampling_rate, use_mem_mapped, contain_nans, keep_nans, start_time, irregular_timestamps
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -259,6 +263,7 @@ def test_linear_interpolation(
             sampling_rate=sampling_rate,
             contain_nans=contain_nans,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -303,8 +308,9 @@ def test_linear_interpolation(
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("keep_nans", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_linear_interpolation_with_phase_shifts(
-    n_signals, sampling_rate, use_mem_mapped, keep_nans, start_time
+    n_signals, sampling_rate, use_mem_mapped, keep_nans, start_time, irregular_timestamps,
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -314,6 +320,7 @@ def test_linear_interpolation_with_phase_shifts(
             sampling_rate=sampling_rate,
             shifts_per_signal=True,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, shift, seq_interp):
@@ -371,7 +378,10 @@ def test_linear_interpolation_with_phase_shifts(
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
 @pytest.mark.parametrize("end_time", [0.05, 1.0, 5.0, 12.0])
 @pytest.mark.parametrize("keep_nans", [False, True])
-def test_interpolation_for_invalid_times(interpolation_mode, end_time, keep_nans):
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
+def test_interpolation_for_invalid_times(
+    interpolation_mode, end_time, keep_nans, irregular_timestamps
+):
     n_signals = 10
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -380,6 +390,7 @@ def test_interpolation_for_invalid_times(interpolation_mode, end_time, keep_nans
             t_end=end_time,
             sampling_rate=10.0,
             start_time=0,
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (_, _, _, seq_interp):
@@ -411,8 +422,9 @@ def test_interpolation_for_invalid_times(interpolation_mode, end_time, keep_nans
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
 @pytest.mark.parametrize("end_time", [0.05, 1.0, 5.0, 12.0])
 @pytest.mark.parametrize("keep_nans", [False, True])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_interpolation_with_phase_shifts_for_invalid_times(
-    interpolation_mode, end_time, keep_nans
+    interpolation_mode, end_time, keep_nans, irregular_timestamps
 ):
     n_signals = 10
     with sequence_data_and_interpolator(
@@ -423,6 +435,7 @@ def test_interpolation_with_phase_shifts_for_invalid_times(
             sampling_rate=10.0,
             shifts_per_signal=True,
             start_time=0,
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (_, _, phase_shifts, seq_interp):
@@ -491,45 +504,6 @@ def test_interpolation_mode_not_implemented():
 # =============================================================================
 # New test cases for expanded coverage
 # =============================================================================
-@pytest.mark.parametrize("n_signals", [1, 10])
-@pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
-@pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
-def test_interpolation_with_irregular_timestamps(
-    n_signals, sampling_rate, interpolation_mode
-):
-    """Test interpolation with irregular (jittered) timestamps."""
-    with sequence_data_and_interpolator(
-        data_kwargs=dict(
-            n_signals=n_signals,
-            use_mem_mapped=True,
-            t_end=5.0,
-            sampling_rate=sampling_rate,
-            start_time=0,
-            irregular_timestamps=True,
-        )
-    ) as (timestamps, data, _, seq_interp):
-        seq_interp.interpolation_mode = interpolation_mode
-
-        # Verify timestamps are monotonically increasing
-        assert np.all(
-            np.diff(timestamps) > 0
-        ), "Timestamps must be monotonically increasing"
-
-        # Verify timestamps are irregular (not perfectly evenly spaced)
-        diffs = np.diff(timestamps)
-        # With jitter, differences should not all be the same
-        assert not np.allclose(
-            diffs, diffs[0], rtol=0.01
-        ), "Timestamps should have irregular spacing"
-
-        # Query times within the valid range
-        times = timestamps[:DEFAULT_SEQUENCE_LENGTH] + 1e-9
-        interp, valid = seq_interp.interpolate(times=times, return_valid=True)
-
-        assert len(valid) > 0, "Should have valid interpolation results"
-        assert interp.shape[1] == n_signals, f"Expected {n_signals} signals"
-
-
 @pytest.mark.parametrize("n_signals", [5, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [10.0, 100.0])
 def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
