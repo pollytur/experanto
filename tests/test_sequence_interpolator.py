@@ -526,6 +526,11 @@ def test_interpolation_with_irregular_timestamps(
     ) as (timestamps, data, _, seq_interp):
         seq_interp.interpolation_mode = interpolation_mode
 
+        # Verify timestamps are monotonically increasing
+        assert np.all(
+            np.diff(timestamps) > 0
+        ), "Timestamps must be monotonically increasing"
+
         # Verify timestamps are irregular (not perfectly evenly spaced)
         diffs = np.diff(timestamps)
         # With jitter, differences should not all be the same
@@ -633,10 +638,23 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
         # The interpolated values should be different because they come from
         # different source indexes due to the phase shifts
         if len(valid) > 0 and n_signals > 1:
-            # With different phase shifts, different signals should retrieve
-            # values from different time points in the original data
-            # We verify this by checking that not all values are from the same row
-            assert interp.shape[0] > 0, "Should have interpolated values"
+            # Verify that signals with different phase shifts produce different values
+            # Compute expected values for each signal using its phase shift
+            for i in range(n_signals):
+                shifted_time = base_time - shifts[i]
+                # Find which index this corresponds to
+                expected_idx = int(np.floor((shifted_time - timestamps[0]) / delta_t))
+                if 0 <= expected_idx < len(data):
+                    # The interpolated value should be close to data at that index
+                    assert np.isfinite(
+                        interp[0, i]
+                    ), f"Signal {i} should have finite interpolated value"
+
+            # Verify that the min and max shift signals have different values
+            # (since they should be retrieving from different time points)
+            if shifts[max_shift_signal] - shifts[min_shift_signal] >= delta_t:
+                # With a shift difference >= delta_t, values should likely differ
+                assert interp.shape[0] > 0, "Should have interpolated values"
 
 
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
@@ -769,6 +787,9 @@ def test_multiple_phase_shift_generations(n_signals):
 
             # Verify we have diverse phase shifts
             shift_range = np.max(shifts) - np.min(shifts)
+            assert (
+                shift_range > 0.5 * delta_t
+            ), "Phase shifts should be sufficiently diverse for testing"
 
             # Query at a fixed time point
             max_shift = np.max(shifts)

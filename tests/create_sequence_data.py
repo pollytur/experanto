@@ -74,18 +74,24 @@ def create_sequence_data(
             int((meta["end_time"] - meta["start_time"]) * meta["sampling_rate"]) + 1
         )
 
-        if irregular_timestamps:
-            # Generate irregular timestamps with random jitter
-            # Start with regular spacing, then add cumulative jitter
+        if irregular_timestamps and n_samples >= 2:
+            # Generate irregular timestamps with random jitter, ensuring monotonicity
             regular_spacing = (meta["end_time"] - meta["start_time"]) / (n_samples - 1)
             jitter_scale = regular_spacing * 0.3  # Up to 30% jitter per interval
-            timestamps = np.zeros(n_samples)
-            timestamps[0] = meta["start_time"]
-            for i in range(1, n_samples - 1):
-                jitter = np.random.uniform(-jitter_scale, jitter_scale)
-                timestamps[i] = timestamps[i - 1] + regular_spacing + jitter
-            # Set the last timestamp exactly to end_time to maintain the interval
-            timestamps[-1] = meta["end_time"]
+            # Generate jitter for each interval (n_samples - 1 intervals)
+            interval_jitter = np.random.uniform(
+                -jitter_scale, jitter_scale, size=n_samples - 1
+            )
+            intervals = regular_spacing + interval_jitter
+            # Ensure all intervals are at least a small positive value for strict monotonicity
+            min_interval = 1e-9
+            intervals = np.clip(intervals, min_interval, None)
+            timestamps = np.concatenate(
+                [[meta["start_time"]], meta["start_time"] + np.cumsum(intervals)]
+            )
+            assert (
+                np.diff(timestamps) > 0
+            ).all(), "time is not monotonically growing anymore"
         else:
             timestamps = np.linspace(
                 meta["start_time"],
