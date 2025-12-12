@@ -74,17 +74,16 @@ def create_sequence_data(
 
         if irregular_timestamps:
             # Generate irregular timestamps with random jitter
-            # Start with regular spacing, then add jitter
-            regular_spacing = 1.0 / sampling_rate
-            jitter_scale = regular_spacing * 0.3  # Up to 30% jitter
+            # Start with regular spacing, then add cumulative jitter
+            regular_spacing = (meta["end_time"] - meta["start_time"]) / (n_samples - 1)
+            jitter_scale = regular_spacing * 0.3  # Up to 30% jitter per interval
             timestamps = np.zeros(n_samples)
             timestamps[0] = meta["start_time"]
-            for i in range(1, n_samples):
+            for i in range(1, n_samples - 1):
                 jitter = np.random.uniform(-jitter_scale, jitter_scale)
                 timestamps[i] = timestamps[i - 1] + regular_spacing + jitter
-            # Ensure end time is approximately correct
-            timestamps = timestamps * (meta["end_time"] - meta["start_time"]) / (timestamps[-1] - timestamps[0])
-            timestamps = timestamps - timestamps[0] + meta["start_time"]
+            # Set the last timestamp exactly to end_time to maintain the interval
+            timestamps[-1] = meta["end_time"]
         else:
             timestamps = np.linspace(
                 meta["start_time"],
