@@ -660,20 +660,22 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate):
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0, 50.0])
 @pytest.mark.parametrize("use_phase_shifts", [False, True])
-def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate, use_phase_shifts):
+def test_linear_interpolation_matches_np_interp(
+    n_signals, sampling_rate, use_phase_shifts
+):
     """
     Test that linear interpolation matches numpy's np.interp function.
 
     This tests the assumptions about how linear interpolation is performed,
     using np.interp as the reference implementation.
-    
+
     Tests both regular interpolation and phase-shifted interpolation where
     each signal has its own shifted time axis.
     """
     # Skip phase shift test for n_signals=1 (no need to test phase shifts with single signal)
     if use_phase_shifts and n_signals == 1:
         pytest.skip("Phase shifts not meaningful for single signal")
-    
+
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
@@ -689,7 +691,7 @@ def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate, use_ph
             assert isinstance(
                 seq_interp, PhaseShiftedSequenceInterpolator
             ), "Should be PhaseShiftedSequenceInterpolator"
-        
+
         seq_interp.interpolation_mode = "linear"
         delta_t = 1.0 / sampling_rate
 
@@ -721,7 +723,9 @@ def test_linear_interpolation_matches_np_interp(n_signals, sampling_rate, use_ph
                     valid_query_times, shifted_timestamps, data[:, sig_idx]
                 )
             else:
-                expected[:, sig_idx] = np.interp(valid_query_times, timestamps, data[:, sig_idx])
+                expected[:, sig_idx] = np.interp(
+                    valid_query_times, timestamps, data[:, sig_idx]
+                )
 
         # Compare results
         assert np.allclose(interp, expected, rtol=1e-6, atol=1e-9), (
