@@ -86,10 +86,14 @@ def create_sequence_data(
                 jitter = np.random.uniform(-jitter_scale, jitter_scale)
                 timestamps[i] = timestamps[i - 1] + regular_spacing + jitter
                 # Ensure we don't get too close to end_time before the last timestamp
-                remaining_samples = n_samples - 1 - i  # How many timestamps left after this one
-                min_space_needed = remaining_samples * regular_spacing * 0.7  # Minimum space we need
+                remaining_samples = (
+                    n_samples - 1 - i
+                )  # How many timestamps left after this one
+                min_space_needed = (
+                    remaining_samples * regular_spacing * 0.7
+                )  # Minimum space we need
                 max_allowed = meta["end_time"] - min_space_needed
-                
+
                 if timestamps[i] > max_allowed:
                     timestamps[i] = max_allowed
             # Set the last timestamp exactly to end_time to maintain the interval
