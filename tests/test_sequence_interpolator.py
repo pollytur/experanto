@@ -563,7 +563,9 @@ def test_phase_shifts_above_sampling_rate(n_signals, sampling_rate):
 @pytest.mark.parametrize("n_signals", [5, 10])
 @pytest.mark.parametrize("sampling_rate", [10.0])
 @pytest.mark.parametrize("interpolation_mode", ["nearest_neighbor", "linear"])
-def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate, interpolation_mode):
+def test_phase_shifts_cause_different_indexes(
+    n_signals, sampling_rate, interpolation_mode
+):
     """
     Test that phase shifts cause different signals to return different index ranges,
     AND verify the interpolation values are actually correct.
@@ -642,9 +644,9 @@ def test_phase_shifts_cause_different_indexes(n_signals, sampling_rate, interpol
             different_count = np.sum(
                 ~np.isclose(interp[:, min_shift_signal], interp[:, max_shift_signal])
             )
-            assert different_count > 0, (
-                "Signals with different phase shifts should have different values"
-            )
+            assert (
+                different_count > 0
+            ), "Signals with different phase shifts should have different values"
 
 
 @pytest.mark.parametrize("n_signals", [1, 5, 10])
