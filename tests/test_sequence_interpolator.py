@@ -15,8 +15,10 @@ DEFAULT_SEQUENCE_LENGTH = 10
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_nearest_neighbor_interpolation(
-    n_signals, sampling_rate, use_mem_mapped, start_time
+    n_signals, sampling_rate, use_mem_mapped, start_time, irregular_timestamps,
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -25,6 +27,7 @@ def test_nearest_neighbor_interpolation(
             t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps,
         )
     ) as (timestamps, data, _, seq_interp):
         assert isinstance(
@@ -54,7 +57,10 @@ def test_nearest_neighbor_interpolation(
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("keep_nans", [False, True])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
-def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans, start_time):
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
+def test_nearest_neighbor_interpolation_handles_nans(
+    n_signals, keep_nans, start_time, irregular_timestamps,
+):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
             n_signals=n_signals,
@@ -63,6 +69,7 @@ def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans, start
             sampling_rate=10.0,
             contain_nans=True,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps,
         ),
         interp_kwargs=dict(keep_nans=keep_nans),
     ) as (timestamps, data, _, seq_interp):
@@ -90,8 +97,9 @@ def test_nearest_neighbor_interpolation_handles_nans(n_signals, keep_nans, start
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("start_time", [0.0, 2.25, 10.0])
+@pytest.mark.parametrize("irregular_timestamps", [True, False])
 def test_nearest_neighbor_interpolation_with_inbetween_times(
-    n_signals, sampling_rate, start_time
+    n_signals, sampling_rate, start_time, irregular_timestamps
 ):
     with sequence_data_and_interpolator(
         data_kwargs=dict(
@@ -100,6 +108,7 @@ def test_nearest_neighbor_interpolation_with_inbetween_times(
             t_end=start_time + 5.0,
             sampling_rate=sampling_rate,
             start_time=start_time,
+            irregular_timestamps=irregular_timestamps,
         )
     ) as (timestamps, data, _, seq_interp):
         assert isinstance(
@@ -117,14 +126,14 @@ def test_nearest_neighbor_interpolation_with_inbetween_times(
         ).all(), "Nearest neighbor interpolation does not match expected data"
 
         # timestamps multiplied by 1.2 should be floored to the next timestamp
-        times = timestamps[:DEFAULT_SEQUENCE_LENGTH] + 1.2 * delta_t
+        times = timestamps[:DEFAULT_SEQUENCE_LENGTH] + 1.4 * delta_t
         interp, valid = seq_interp.interpolate(times=times, return_valid=True)
         assert times.shape == valid.shape, "All samples should be valid"
         assert (
             interp == data[1 : DEFAULT_SEQUENCE_LENGTH + 1]
         ).all(), "Nearest neighbor interpolation does not match expected data"
 
-
+#todo- think about phase shifts starting from here
 @pytest.mark.parametrize("n_signals", [0, 1, 10, 50])
 @pytest.mark.parametrize("sampling_rate", [3.0, 10.0, 100.0])
 @pytest.mark.parametrize("use_mem_mapped", [False, True])
